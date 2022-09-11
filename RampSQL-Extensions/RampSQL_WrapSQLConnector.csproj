@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>RampSQL.Extensions</RootNamespace>
+    <ApplicationIcon>EndevLibsLogo.ico</ApplicationIcon>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>Endev.RampSQL.Extensions.WrapSQLConnector</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Tobias Hattinger</Authors>
+    <Company>Endev</Company>
+    <Product>RampSQL</Product>
+    <Description>RampSQL extension for use with WrapSQL classes</Description>
+    <Copyright>2022 Tobias Hattinger</Copyright>
+    <PackageProjectUrl>https://endev.at/p/rampsql</PackageProjectUrl>
+    <PackageIcon>EndevLibsLogo.png</PackageIcon>
+    <RepositoryType>GitHub</RepositoryType>
+    <RepositoryUrl>https://github.com/TobiHatti/RampSQL</RepositoryUrl>
+    <PackageTags>SQL, Wrapper, Utilities, Modelbinder, Querybuilder, Search engine</PackageTags>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <NeutralLanguage>en</NeutralLanguage>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\Tobias\.nuget\packages\endev.rampsql\1.0.0\contentFiles\any\netstandard2.0\EndevLibsLogo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="EndevLibsLogo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Endev.RampSQL" Version="1.0.0" />
+    <PackageReference Include="Endev.WrapSQL.WrapSQLBase" Version="2.1.0" />
+  </ItemGroup>
+
+</Project>

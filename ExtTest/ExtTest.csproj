@@ -106,13 +106,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RampSQL-Extensions\RampSQL-Extensions.csproj">
+    <ProjectReference Include="..\RampSQL-Extensions\RampSQL_WrapSQLConnector.csproj">
       <Project>{f9488367-d521-4d32-8782-9de6598a6228}</Project>
-      <Name>RampSQL-Extensions</Name>
+      <Name>RampSQL_WrapSQLConnector</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="EndevLibsLogo.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

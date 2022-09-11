@@ -20,9 +20,5 @@ namespace RampSQL.Extensions
         public static DataAdapter RampDataAdapter(this WrapSQLBase sql, IQuerySection query) => sql.GetDataAdapter(query.ToString(), query.GetParameters());
 
         #endregion
-
-        #region RampSQL Search extensions
-
-        #endregion
     }
 }

@@ -42,8 +42,6 @@ namespace ExtTest
                 sql.Close();
 
                 SearchEngine engine = null;
-
-                engine.Connector()
             }
 
 
