@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>RampSQL_Extensions</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Endev.RampSQL" Version="1.0.0" />
+    <PackageReference Include="Endev.WrapSQL.WrapSQLBase" Version="2.1.0" />
+  </ItemGroup>
+
+</Project>
