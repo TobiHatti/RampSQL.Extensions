@@ -54,8 +54,8 @@
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="RampSQL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Endev.RampSQL.1.0.0\lib\netstandard2.0\RampSQL.dll</HintPath>
+    <Reference Include="RampSQL, Version=1.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Endev.RampSQL.1.0.6\lib\netstandard2.0\RampSQL.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -106,7 +106,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RampSQL-Extensions\RampSQL_WrapSQLConnector.csproj">
+    <ProjectReference Include="..\RampSQL_WrapSQLConnector\RampSQL_WrapSQLConnector.csproj">
       <Project>{f9488367-d521-4d32-8782-9de6598a6228}</Project>
       <Name>RampSQL_WrapSQLConnector</Name>
     </ProjectReference>
