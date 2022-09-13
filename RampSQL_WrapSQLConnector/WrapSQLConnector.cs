@@ -1,10 +1,9 @@
-﻿using RampSQL.Query;
-using RampSQL.Reader;
+﻿using RampSQL.Reader;
 using System.Data;
 using System.Data.Common;
 using WrapSQL;
 
-namespace RampSQL.Extensions
+namespace RampSQL.Query
 {
     public static class WrapSQLConnector
     {

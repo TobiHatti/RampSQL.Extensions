@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -6,7 +6,7 @@
     <ApplicationIcon>EndevLibsLogo.ico</ApplicationIcon>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>Endev.RampSQL.Extensions.WrapSQLConnector</PackageId>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <Authors>Tobias Hattinger</Authors>
     <Company>Endev</Company>
     <Product>RampSQL</Product>
@@ -17,12 +17,12 @@
     <RepositoryType>GitHub</RepositoryType>
     <RepositoryUrl>https://github.com/TobiHatti/RampSQL</RepositoryUrl>
     <PackageTags>SQL, Wrapper, Utilities, Modelbinder, Querybuilder, Search engine</PackageTags>
-    <AssemblyVersion>1.0.5</AssemblyVersion>
-    <FileVersion>1.0.5</FileVersion>
+    <AssemblyVersion>1.0.6</AssemblyVersion>
+    <FileVersion>1.0.6</FileVersion>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Fixed Typo</PackageReleaseNotes>
+    <PackageReleaseNotes>Updated dependencies, simplified namespaces</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Endev.RampSQL" Version="1.0.6" />
+    <PackageReference Include="Endev.RampSQL" Version="1.0.10" />
     <PackageReference Include="Endev.WrapSQL.WrapSQLBase" Version="2.1.0" />
   </ItemGroup>
 
