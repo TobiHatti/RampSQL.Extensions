@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Endev.RampSQL" Version="1.0.10" />
+    <PackageReference Include="Endev.RampSQL" Version="1.0.18" />
     <PackageReference Include="Endev.WrapSQL.WrapSQLBase" Version="2.1.0" />
   </ItemGroup>
 

@@ -1,81 +1,221 @@
 ﻿using RampSQL.Binder;
 using RampSQL.Query;
-using RampSQL.Reader;
 using RampSQL.Schema;
-using System.Data.Common;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using WrapSQL;
+using static RampSQL.Binder.RampModelBinder;
 
 namespace RampSQL.Extensions
 {
     public abstract class ModelIOHandler : IRampLoadable, IRampSaveable
     {
-        private WrapSQLBase sql;
+        private static WrapSQLBase _sql = null;
+        private static WrapSQLBase Sql
+        {
+            get
+            {
+                if (_sql == null) throw new Exception("SQL Instance not set");
+                return _sql;
+            }
+            set
+            {
+                _sql = value;
+            }
+        }
+
+        public static void LinkDatabase(WrapSQLBase sqlConnection) => Sql = sqlConnection;
+
         public abstract RampModelBinder GetBinder();
 
-        public void LinkDatabase(WrapSQLBase sql) => this.sql = sql;
-        public IRampLoadable LoadAll() => LoadAll(this.sql);
+        public IRampLoadable LoadFromPrimaryKey<T>(T ID) => LoadFromRamp(SelectQueryBuilder().Where.Is(GetBinder().PrimaryKey.Column, ID));
+        public IRampLoadable LoadFromRamp(IQuerySection rampQuery) => ExecuteLoad(rampQuery);
 
-        public IRampLoadable LoadAll(WrapSQLBase sql) => LoadFromRamp(sql, new QueryEngine().SelectFrom(GetBinder().Target).All());
+        public static IRampLoadable[] LoadAll<T>() where T : IRampLoadable => LoadRangeFromRamp<T>(SelectQueryBuilder<T>());
+        public static IRampLoadable[] LoadRange<T>(RampColumn column, params object[] values) where T : IRampLoadable => LoadRangeFromRamp<T>(SelectQueryBuilder<T>().Where.In(column, values));
+        public static IRampLoadable[] LoadRangeFromRamp<T>(IQuerySection rampQuery) where T : IRampLoadable => ExecuteRangeLoad(rampQuery, typeof(T));
+        public static IRampLoadable[] LoadRangeFromRamp(IQuerySection rampQuery, Type targetType) => ExecuteRangeLoad(rampQuery, targetType);
 
-        public IRampLoadable LoadFromPrimaryKey<T>(T ID) => LoadFromPrimaryKey<T>(this.sql, ID);
-        public IRampLoadable LoadFromPrimaryKey<T>(WrapSQLBase sql, T ID)
+        private class RefBindQueueEntry
         {
-            RampModelBinder binder = GetBinder();
-            return LoadFromRamp(sql, new QueryEngine().SelectFrom(binder.Target).All().Where.Is(binder.PrimaryKey.Column, ID));
+            public object RefLinkValue { get; set; }
+            public BindEntry ParentBind { get; set; }
         }
 
-        public IRampLoadable LoadFromQuery(string query, params object[] values) => LoadFromQuery(this.sql, query, values);
-        public IRampLoadable LoadFromQuery(WrapSQLBase sql, string query, params object[] values)
+        private static IRampLoadable[] ExecuteRangeLoad(IQuerySection query, Type targetType)
         {
-            IRampLoadable model = null;
-            sql.Open();
-            using (RampReader reader = new RampReader(sql.ExecuteQuery(query, values)))
+            Sql.Open();
+
+            List<RefBindQueueEntry> refQueue = new List<RefBindQueueEntry>();
+
+            Type genericListType = typeof(List<>).MakeGenericType(targetType);
+            IList models = (IList)Activator.CreateInstance(genericListType);
+
+            Sql.ExecuteQuery(query).ReadAll((r) =>
             {
-                while (reader.Read()) model = LoadFromReader(reader);
+                IRampLoadable model = (IRampLoadable)Activator.CreateInstance(targetType);
+                RampModelBinder binder = model.GetBinder();
+
+                // Primary key
+                binder.PrimaryKey.Set(r[binder.PrimaryKey.Column]);
+
+                foreach (BindEntry bind in binder.Binds)
+                {
+                    // Primitives
+                    if (bind.BindType == BindType.Primitive)
+                        bind.Set(r[bind.Column]);
+
+                    // Activate Reference
+                    if (bind.BindType == BindType.Reference)
+                    {
+                        IRampLoadable referenceModel = (IRampLoadable)Activator.CreateInstance(bind.Type);
+                        bind.Set(referenceModel);
+
+                        refQueue.Add(new RefBindQueueEntry()
+                        {
+                            RefLinkValue = r[bind.Column],
+                            ParentBind = bind
+                        });
+                    }
+
+                    if (bind.BindType == BindType.ReferenceArray)
+                    {
+                        refQueue.Add(new RefBindQueueEntry()
+                        {
+                            RefLinkValue = r[bind.Column],
+                            ParentBind = bind
+                        });
+                    }
+                }
+
+                models.Add(model);
+
+            });
+            Sql.Close();
+
+
+            foreach (RefBindQueueEntry rq in refQueue)
+            {
+                switch (rq.ParentBind.BindType)
+                {
+                    case BindType.Reference:
+                        IRampLoadable refModel = rq.ParentBind.Get() as IRampLoadable;
+                        RampModelBinder refBinder = refModel.GetBinder();
+                        refModel.LoadFromRamp(new QueryEngine().SelectAllFrom(refBinder.Target).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue));
+                        break;
+                    case BindType.ReferenceArray:
+                        rq.ParentBind.Set(LoadRangeFromRamp(new QueryEngine().SelectAllFrom(rq.ParentBind.ReferenceColumn.ParentTable).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), rq.ParentBind.Type));
+                        break;
+                }
             }
-            sql.Close();
-            return model;
+
+            IRampLoadable[] resArray = (IRampLoadable[])Activator.CreateInstance(targetType.MakeArrayType(), models.Count);
+            models.CopyTo(resArray, 0);
+
+            return resArray;
         }
 
-        public IRampLoadable LoadFromRamp(IQuerySection rampQuery) => LoadFromRamp(this.sql, rampQuery);
-        public IRampLoadable LoadFromRamp(WrapSQLBase sql, IQuerySection rampQuery) => LoadFromQuery(sql, rampQuery.ToString(), rampQuery.GetParameters());
-
-        public IRampLoadable LoadFromReader(DbDataReader reader) => LoadFromReader(new RampReader(reader));
-        public IRampLoadable LoadFromReader(RampReader reader)
+        private IRampLoadable ExecuteLoad(IQuerySection query)
         {
-            RampModelBinder binder = GetBinder();
-            foreach (RampModelBinder.BindEntry bind in binder.Binds) bind.Set(reader[bind.Column]);
-            binder.PrimaryKey.Set(reader[binder.PrimaryKey.Column]);
+            Sql.Open();
+
+            List<RefBindQueueEntry> refQueue = new List<RefBindQueueEntry>();
+
+            Sql.ExecuteQuery(query).ReadAll((r) =>
+            {
+                RampModelBinder binder = GetBinder();
+
+                // Primary key
+                binder.PrimaryKey.Set(r[binder.PrimaryKey.Column]);
+
+                foreach (BindEntry bind in binder.Binds)
+                {
+                    // Primitives
+                    if (bind.BindType == BindType.Primitive)
+                        bind.Set(r[bind.Column]);
+
+                    // Activate Reference
+                    if (bind.BindType == BindType.Reference)
+                    {
+                        IRampLoadable referenceModel = (IRampLoadable)Activator.CreateInstance(bind.Type);
+                        bind.Set(referenceModel);
+
+                        refQueue.Add(new RefBindQueueEntry()
+                        {
+                            RefLinkValue = r[bind.Column],
+                            ParentBind = bind
+                        });
+                    }
+
+                    if (bind.BindType == BindType.ReferenceArray)
+                    {
+                        refQueue.Add(new RefBindQueueEntry()
+                        {
+                            RefLinkValue = r[bind.Column],
+                            ParentBind = bind
+                        });
+                    }
+                }
+            });
+            Sql.Close();
+
+
+            foreach (RefBindQueueEntry rq in refQueue)
+            {
+                switch (rq.ParentBind.BindType)
+                {
+                    case BindType.Reference:
+                        IRampLoadable refModel = rq.ParentBind.Get() as IRampLoadable;
+                        RampModelBinder refBinder = refModel.GetBinder();
+                        refModel.LoadFromRamp(new QueryEngine().SelectAllFrom(refBinder.Target).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue));
+                        break;
+                    case BindType.ReferenceArray:
+                        rq.ParentBind.Set(LoadRangeFromRamp(new QueryEngine().SelectAllFrom(rq.ParentBind.ReferenceColumn.ParentTable).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), rq.ParentBind.Type));
+                        break;
+                }
+            }
             return this;
         }
 
 
-        public IRampLoadable LoadRange(RampColumn column, params object[] values) => LoadRange(this.sql, column, values);
-        public IRampLoadable LoadRange(WrapSQLBase sql, RampColumn column, params object[] values) => LoadFromRamp(sql, new QueryEngine().SelectFrom(GetBinder().Target).All().Where.In(column, values));
+        private static JoinQuery SelectQueryBuilder<T>() where T : IRampLoadable
+        {
+            T instance = (T)Activator.CreateInstance(typeof(T));
+            RampModelBinder binder = instance.GetBinder();
+            SelectQuery query = new QueryEngine().SelectAllFrom(binder.Target);
+            return query;
+        }
 
-        public void SaveModel() => SaveModel(this.sql);
-        public void SaveModel(WrapSQLBase sql)
+        private JoinQuery SelectQueryBuilder()
         {
             RampModelBinder binder = GetBinder();
-            sql.Open();
+            SelectQuery query = new QueryEngine().SelectAllFrom(binder.Target);
+            return query;
+        }
+
+        public void SaveModel()
+        {
+            RampModelBinder binder = GetBinder();
+            Sql.Open();
 
             IQuerySection query;
-            if (sql.ExecuteScalar<int>(new QueryEngine().SelectFrom(binder.Target).Count().Where.Is(binder.PrimaryKey.Column, binder.PrimaryKey.Get())) == 0)
+            if (Sql.ExecuteScalar<int>(new QueryEngine().SelectFrom(binder.Target).Count().Where.Is(binder.PrimaryKey.Column, binder.PrimaryKey.Get())) == 0)
             {
                 query = new QueryEngine().InsertInto(binder.Target);
-                foreach (RampModelBinder.BindEntry bind in binder.Binds) (query as InsertKeyValueQuery).Value(bind.Column, bind.Get());
+                foreach (BindEntry bind in binder.Binds) (query as InsertKeyValueQuery).Value(bind.Column, bind.Get());
                 (query as InsertKeyValueQuery).Value(binder.PrimaryKey.Column, binder.PrimaryKey.Get()).GetLastID();
-                binder.PrimaryKey.Set(sql.ExecuteScalar(query));
+                binder.PrimaryKey.Set(Sql.ExecuteScalar(query));
             }
             else
             {
                 query = new QueryEngine().Update(binder.Target);
-                foreach (RampModelBinder.BindEntry bind in binder.Binds) (query as UpdateKeyValueQuery).Value(bind.Column, bind.Get());
+                foreach (BindEntry bind in binder.Binds) (query as UpdateKeyValueQuery).Value(bind.Column, bind.Get());
                 (query as UpdateKeyValueQuery).Where.Is(binder.PrimaryKey.Column, binder.PrimaryKey.Get());
-                sql.ExecuteNonQuery(query);
+                Sql.ExecuteNonQuery(query);
             }
 
-            sql.Close();
+            Sql.Close();
         }
     }
 }
