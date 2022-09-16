@@ -184,6 +184,7 @@ namespace RampSQL.Extensions
             T instance = (T)Activator.CreateInstance(typeof(T));
             RampModelBinder binder = instance.GetBinder();
             SelectQuery query = new QueryEngine().SelectAllFrom(binder.Target);
+            foreach (TableLinkEntry tb in binder.TableLinks) query.InnerJoin(tb.LocalColumn, tb.ReferenceColumn);
             return query;
         }
 
@@ -191,6 +192,7 @@ namespace RampSQL.Extensions
         {
             RampModelBinder binder = GetBinder();
             SelectQuery query = new QueryEngine().SelectAllFrom(binder.Target);
+            foreach (TableLinkEntry tb in binder.TableLinks) query.InnerJoin(tb.LocalColumn, tb.ReferenceColumn);
             return query;
         }
 

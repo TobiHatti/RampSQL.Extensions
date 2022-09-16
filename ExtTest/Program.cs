@@ -21,6 +21,8 @@ namespace ExtTest
                 public RampColumn HouseNumber { get; set; }
                 [BindColumn("IsBungalow", typeof(bool))]
                 public RampColumn IsBungalow { get; set; }
+                [BindColumn("HouseType", typeof(bool))]
+                public RampColumn HouseType { get; set; }
 
             }
 
@@ -51,6 +53,17 @@ namespace ExtTest
                 public RampColumn PetName { get; set; }
 
             }
+
+            public static RampHouseTypes HouseTypes = new RampHouseTypes();
+            [BindTable("HouseTypes")]
+            public class RampHouseTypes : RampTable
+            {
+                [BindColumn("ID", typeof(string))]
+                public RampColumn ID { get; set; }
+                [BindColumn("DisplayText", typeof(string))]
+                public RampColumn DisplayText { get; set; }
+
+            }
         }
 
         public class HouseModel : ModelIOHandler
@@ -60,15 +73,18 @@ namespace ExtTest
             public int HouseNumber { get; set; }
             public bool IsBungalow { get; set; }
             public ResidentModel[] Resident { get; set; }
+            public string HouseLabelThing { get; set; }
 
             public override RampModelBinder GetBinder()
             {
                 return new RampModelBinder()
                     .SetTarget(RDB.Houses)
+                    .LinkTable(RDB.Houses.HouseType, RDB.HouseTypes.ID)
                     .BindPrimaryKey(RDB.Houses.ID, () => ID, (e) => ID = e)
                     .Bind(RDB.Houses.HouseName, () => HouseName, (e) => HouseName = e)
                     .Bind(RDB.Houses.HouseNumber, () => HouseNumber, (e) => HouseNumber = e)
                     .Bind(RDB.Houses.IsBungalow, () => IsBungalow, (e) => IsBungalow = e)
+                    .Bind(RDB.HouseTypes.DisplayText, () => HouseLabelThing, (e) => HouseLabelThing = e)
                     .ReferenceBind(RDB.Houses.ID, RDB.Residents.HouseID, () => Resident, (e) => Resident = e);
             }
         }
@@ -106,6 +122,7 @@ namespace ExtTest
                     .BindPrimaryKey(RDB.Pets.ID, () => ID, (e) => ID = e)
                     .Bind(RDB.Pets.ResidentID, () => ResidentID, (e) => ResidentID = e)
                     .Bind(RDB.Pets.PetName, () => PetName, (e) => PetName = e);
+
             }
         }
 

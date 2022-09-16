@@ -5,7 +5,7 @@
     <ApplicationIcon>EndevLibsLogo.ico</ApplicationIcon>
     <PackageId>Endev.RampSQL.Extensions.IO</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <Authors>Tobias Hattinger</Authors>
     <Company>Endev</Company>
     <Product>RampSQL</Product>
@@ -17,11 +17,11 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>SQL, Wrapper, Utilities, Modelbinder, Querybuilder, Search engine</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyVersion>1.0.6</AssemblyVersion>
-    <FileVersion>1.0.6</FileVersion>
+    <AssemblyVersion>1.0.7</AssemblyVersion>
+    <FileVersion>1.0.7</FileVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Updated Loaders for referenceBinds, multi-table loads now possible</PackageReleaseNotes>
+    <PackageReleaseNotes>Added support for TableLinks </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Endev.RampSQL" Version="1.0.18" />
+    <PackageReference Include="Endev.RampSQL" Version="1.0.21" />
     <PackageReference Include="Endev.RampSQL.Extensions.WrapSQLConnector" Version="1.0.6" />
   </ItemGroup>
 
