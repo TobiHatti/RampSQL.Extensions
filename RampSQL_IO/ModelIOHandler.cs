@@ -42,7 +42,7 @@ namespace RampSQL.Extensions
             public BindEntry ParentBind { get; set; }
         }
 
-        private static IRampLoadable[] ExecuteRangeLoad(IQuerySection query, Type targetType, Action<IRampLoadable[]> onFinishLoadingEvent = null)
+        private static IRampLoadable[] ExecuteRangeLoad(IQuerySection query, Type targetType, Action<IRampLoadable[]> onFinishLoadingEvent = null, IRampBindable callingParent = null)
         {
             List<RefBindQueueEntry> refQueue = new List<RefBindQueueEntry>();
             List<KeyValuePair<Action<IRampBindable>, IRampBindable>> afterLoadEventQueue = new List<KeyValuePair<Action<IRampBindable>, IRampBindable>>();
@@ -63,6 +63,9 @@ namespace RampSQL.Extensions
 
                     // Primary key
                     binder.PrimaryKey.Set(r[binder.PrimaryKey.Column]);
+
+                    // Parent
+                    if (binder.CallingParent != null && callingParent != null) binder.CallingParent.Set(callingParent);
 
                     foreach (BindEntry bind in binder.Binds)
                     {
@@ -126,11 +129,17 @@ namespace RampSQL.Extensions
                 {
                     case BindType.Reference:
                         IRampLoadable refModel = rq.ParentBind.Get() as IRampLoadable;
-                        RampModelBinder refBinder = refModel.GetBinder();
-                        refModel.LoadFromRamp(new QueryEngine().SelectAllFrom(refBinder.Target).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue));
+                        refModel.ExecuteLoad(SelectQueryBuilder(rq.ParentBind.Type).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), null, rq.ParentBind.CallingParent);
                         break;
                     case BindType.ReferenceArray:
-                        rq.ParentBind.Set(LoadRangeFromRamp(new QueryEngine().SelectAllFrom(rq.ParentBind.ReferenceColumn.ParentTable).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), rq.ParentBind.Type));
+                        rq.ParentBind.Set(ExecuteRangeLoad(SelectQueryBuilder(rq.ParentBind.Type).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), rq.ParentBind.Type, null, rq.ParentBind.CallingParent));
+                        break;
+                    case BindType.BindAll:
+                        IRampLoadable baRefModel = rq.ParentBind.Get() as IRampLoadable;
+                        baRefModel.ExecuteLoad(SelectQueryBuilder(rq.ParentBind.Type), null, rq.ParentBind.CallingParent);
+                        break;
+                    case BindType.BindAllArray:
+                        rq.ParentBind.Set(ExecuteRangeLoad(SelectQueryBuilder(rq.ParentBind.Type), rq.ParentBind.Type, null, rq.ParentBind.CallingParent));
                         break;
                 }
             }
@@ -144,7 +153,7 @@ namespace RampSQL.Extensions
             return resArray;
         }
 
-        private IRampLoadable ExecuteLoad(IQuerySection query, Action<IRampLoadable> onFinishLoadingEvent = null)
+        public IRampLoadable ExecuteLoad(IQuerySection query, Action<IRampLoadable> onFinishLoadingEvent = null, IRampBindable callingParent = null)
         {
             List<RefBindQueueEntry> refQueue = new List<RefBindQueueEntry>();
             List<KeyValuePair<Action<IRampBindable>, IRampBindable>> afterLoadEventQueue = new List<KeyValuePair<Action<IRampBindable>, IRampBindable>>();
@@ -162,6 +171,9 @@ namespace RampSQL.Extensions
 
                     // Primary key
                     binder.PrimaryKey.Set(r[binder.PrimaryKey.Column]);
+
+                    // Parent
+                    if (binder.CallingParent != null && callingParent != null) binder.CallingParent.Set(callingParent);
 
                     foreach (BindEntry bind in binder.Binds)
                     {
@@ -226,17 +238,17 @@ namespace RampSQL.Extensions
                 {
                     case BindType.Reference:
                         IRampLoadable refModel = rq.ParentBind.Get() as IRampLoadable;
-                        refModel.LoadFromRamp(SelectQueryBuilder(rq.ParentBind.Type).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue));
+                        refModel.ExecuteLoad(SelectQueryBuilder(rq.ParentBind.Type).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), null, rq.ParentBind.CallingParent);
                         break;
                     case BindType.ReferenceArray:
-                        rq.ParentBind.Set(LoadRangeFromRamp(SelectQueryBuilder(rq.ParentBind.Type).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), rq.ParentBind.Type));
+                        rq.ParentBind.Set(ExecuteRangeLoad(SelectQueryBuilder(rq.ParentBind.Type).Where.Is(rq.ParentBind.ReferenceColumn, rq.RefLinkValue), rq.ParentBind.Type, null, rq.ParentBind.CallingParent));
                         break;
                     case BindType.BindAll:
                         IRampLoadable baRefModel = rq.ParentBind.Get() as IRampLoadable;
-                        baRefModel.LoadFromRamp(SelectQueryBuilder(rq.ParentBind.Type));
+                        baRefModel.ExecuteLoad(SelectQueryBuilder(rq.ParentBind.Type), null, rq.ParentBind.CallingParent);
                         break;
                     case BindType.BindAllArray:
-                        rq.ParentBind.Set(LoadRangeFromRamp(SelectQueryBuilder(rq.ParentBind.Type), rq.ParentBind.Type));
+                        rq.ParentBind.Set(ExecuteRangeLoad(SelectQueryBuilder(rq.ParentBind.Type), rq.ParentBind.Type, null, rq.ParentBind.CallingParent));
                         break;
                 }
             }
@@ -300,5 +312,7 @@ namespace RampSQL.Extensions
                 sql.Close();
             }
         }
+
+
     }
 }
