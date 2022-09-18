@@ -1,7 +1,7 @@
 ﻿using RampSQL.Binder;
 using RampSQL.Extensions;
 using RampSQL.Schema;
-using WrapSQL;
+using WrapSql;
 
 namespace ExtTest
 {
@@ -129,7 +129,7 @@ namespace ExtTest
         static void Main(string[] args)
         {
 
-            ModelIOHandler.LinkDatabase(new WrapMySQL("endev.at", "u94925db7", "u94925db7", "cola0815"));
+            ModelIOHandler.LinkDatabase<WrapMySql>(new WrapMySqlData("endev.at", "u94925db7", "u94925db7", "cola0815"));
 
 
             PetsModel pet = new PetsModel();
