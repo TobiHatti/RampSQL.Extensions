@@ -5,7 +5,7 @@
     <ApplicationIcon>EndevLibsLogo.ico</ApplicationIcon>
     <PackageId>Endev.RampSQL.Extensions.IO</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.0.9</Version>
+    <Version>1.0.11</Version>
     <Authors>Tobias Hattinger</Authors>
     <Company>Endev</Company>
     <Product>RampSQL</Product>
@@ -17,11 +17,11 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>SQL, Wrapper, Utilities, Modelbinder, Querybuilder, Search engine</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyVersion>1.0.9</AssemblyVersion>
-    <FileVersion>1.0.9</FileVersion>
+    <AssemblyVersion>1.0.11</AssemblyVersion>
+    <FileVersion>1.0.11</FileVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Added after-load event support, Added support for custom readers, Added support for custom ref join types</PackageReleaseNotes>
+    <PackageReleaseNotes>Added beforeload and afterload events</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Endev.RampSQL" Version="1.0.27" />
+    <PackageReference Include="Endev.RampSQL" Version="1.0.28" />
     <PackageReference Include="Endev.RampSQL.Extensions.WrapSQLConnector" Version="1.0.7" />
   </ItemGroup>
 
