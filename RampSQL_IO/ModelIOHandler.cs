@@ -14,16 +14,29 @@ namespace RampSQL.Extensions
         private static Type WrapSqlType = null;
         private static IWrapSqlConnector connector;
 
+        private RampModelBinder binder = null;
+        public RampModelBinder Binder
+        {
+            get
+            {
+                if (binder == null) binder = GetBinder();
+                return binder;
+            }
+        }
+
         public static void LinkDatabase<T>(IWrapSqlConnector connector) where T : IWrapSql
         {
             WrapSqlType = typeof(T);
             ModelIOHandler.connector = connector;
         }
 
+
+
+
         public abstract RampModelBinder GetBinder();
 
-        public IRampLoadable LoadFromPrimaryKey<T>(T ID) => LoadFromRamp(SelectQueryBuilder().Where.Is(GetBinder().PrimaryKey.Column, ID));
-        public IRampLoadable LoadFromPrimaryKey<T>(T ID, Action<IRampLoadable> onFinishLoadingEvent) => LoadFromRamp(SelectQueryBuilder().Where.Is(GetBinder().PrimaryKey.Column, ID), onFinishLoadingEvent);
+        public IRampLoadable LoadFromPrimaryKey<T>(T ID) => LoadFromRamp(SelectQueryBuilder().Where.Is(Binder.PrimaryKey.Column, ID));
+        public IRampLoadable LoadFromPrimaryKey<T>(T ID, Action<IRampLoadable> onFinishLoadingEvent) => LoadFromRamp(SelectQueryBuilder().Where.Is(Binder.PrimaryKey.Column, ID), onFinishLoadingEvent);
         public IRampLoadable LoadFromRamp(IQuerySection rampQuery) => ExecuteLoad(rampQuery);
         public IRampLoadable LoadFromRamp(IQuerySection rampQuery, Action<IRampLoadable> onFinishLoadingEvent) => ExecuteLoad(rampQuery, onFinishLoadingEvent);
 
@@ -164,18 +177,16 @@ namespace RampSQL.Extensions
 
                 sql.ExecuteQuery(query).ReadAll((r) =>
                 {
-                    RampModelBinder binder = GetBinder();
-
-                    if (binder.BeforeLoadEvent != null) binder.BeforeLoadEvent(this);
-                    if (binder.AfterLoadEvent != null) afterLoadEventQueue.Add(new KeyValuePair<Action<IRampBindable>, IRampBindable>(binder.AfterLoadEvent, this));
+                    if (Binder.BeforeLoadEvent != null) Binder.BeforeLoadEvent(this);
+                    if (Binder.AfterLoadEvent != null) afterLoadEventQueue.Add(new KeyValuePair<Action<IRampBindable>, IRampBindable>(Binder.AfterLoadEvent, this));
 
                     // Primary key
-                    binder.PrimaryKey.Set(r[binder.PrimaryKey.Column]);
+                    Binder.PrimaryKey.Set(r[Binder.PrimaryKey.Column]);
 
                     // Parent
-                    if (binder.CallingParent != null && callingParent != null) binder.CallingParent.Set(callingParent);
+                    if (Binder.CallingParent != null && callingParent != null) Binder.CallingParent.Set(callingParent);
 
-                    foreach (BindEntry bind in binder.Binds)
+                    foreach (BindEntry bind in Binder.Binds)
                     {
                         // Primitives
                         if (bind.BindType == BindType.Primitive)
@@ -279,33 +290,30 @@ namespace RampSQL.Extensions
 
         private JoinQuery SelectQueryBuilder()
         {
-            RampModelBinder binder = GetBinder();
-            SelectQuery query = new QueryEngine().SelectAllFrom(binder.Target);
-            foreach (TableLinkEntry tb in binder.TableLinks) query.Join(tb.LocalColumn, tb.ReferenceColumn, tb.RefJoinType);
+            SelectQuery query = new QueryEngine().SelectAllFrom(Binder.Target);
+            foreach (TableLinkEntry tb in Binder.TableLinks) query.Join(tb.LocalColumn, tb.ReferenceColumn, tb.RefJoinType);
             return query;
         }
 
         public void SaveModel()
         {
-            RampModelBinder binder = GetBinder();
-
             using (WrapSqlBase sql = (WrapSqlBase)Activator.CreateInstance(WrapSqlType, connector))
             {
                 sql.Open();
 
                 IQuerySection query;
-                if (sql.ExecuteScalar<int>(new QueryEngine().SelectFrom(binder.Target).Count().Where.Is(binder.PrimaryKey.Column, binder.PrimaryKey.Get())) == 0)
+                if (sql.ExecuteScalar<int>(new QueryEngine().SelectFrom(Binder.Target).Count().Where.Is(Binder.PrimaryKey.Column, Binder.PrimaryKey.Get())) == 0)
                 {
-                    query = new QueryEngine().InsertInto(binder.Target);
-                    foreach (BindEntry bind in binder.Binds) (query as InsertKeyValueQuery).Value(bind.Column, bind.Get());
-                    (query as InsertKeyValueQuery).Value(binder.PrimaryKey.Column, binder.PrimaryKey.Get()).GetLastID();
-                    binder.PrimaryKey.Set(sql.ExecuteScalar(query));
+                    query = new QueryEngine().InsertInto(Binder.Target);
+                    foreach (BindEntry bind in Binder.Binds) (query as InsertKeyValueQuery).Value(bind.Column, bind.Get());
+                    (query as InsertKeyValueQuery).Value(Binder.PrimaryKey.Column, Binder.PrimaryKey.Get()).GetLastID();
+                    Binder.PrimaryKey.Set(sql.ExecuteScalar(query));
                 }
                 else
                 {
-                    query = new QueryEngine().Update(binder.Target);
-                    foreach (BindEntry bind in binder.Binds) (query as UpdateKeyValueQuery).Value(bind.Column, bind.Get());
-                    (query as UpdateKeyValueQuery).Where.Is(binder.PrimaryKey.Column, binder.PrimaryKey.Get());
+                    query = new QueryEngine().Update(Binder.Target);
+                    foreach (BindEntry bind in Binder.Binds) (query as UpdateKeyValueQuery).Value(bind.Column, bind.Get());
+                    (query as UpdateKeyValueQuery).Where.Is(Binder.PrimaryKey.Column, Binder.PrimaryKey.Get());
                     sql.ExecuteNonQuery(query);
                 }
 
