@@ -1,4 +1,5 @@
-﻿using RampSQL.Binder;
+﻿using Newtonsoft.Json;
+using RampSQL.Binder;
 using RampSQL.Query;
 using RampSQL.Schema;
 using System;
@@ -15,6 +16,8 @@ namespace RampSQL.Extensions
         private static IWrapSqlConnector connector;
 
         private RampModelBinder binder = null;
+
+        [JsonIgnore]
         public RampModelBinder Binder
         {
             get
@@ -30,11 +33,10 @@ namespace RampSQL.Extensions
             ModelIOHandler.connector = connector;
         }
 
-
-
-
         public abstract RampModelBinder GetBinder();
 
+        public IRampLoadable LoadFromKey<T>(RampColumn column, T key) => LoadFromRamp(SelectQueryBuilder().Where.Is(column, key));
+        public IRampLoadable LoadFromKey<T>(RampColumn column, T key, Action<IRampLoadable> onFinishLoadingEvent) => LoadFromRamp(SelectQueryBuilder().Where.Is(column, key), onFinishLoadingEvent);
         public IRampLoadable LoadFromPrimaryKey<T>(T ID) => LoadFromRamp(SelectQueryBuilder().Where.Is(Binder.PrimaryKey.Column, ID));
         public IRampLoadable LoadFromPrimaryKey<T>(T ID, Action<IRampLoadable> onFinishLoadingEvent) => LoadFromRamp(SelectQueryBuilder().Where.Is(Binder.PrimaryKey.Column, ID), onFinishLoadingEvent);
         public IRampLoadable LoadFromRamp(IQuerySection rampQuery) => ExecuteLoad(rampQuery);
@@ -87,7 +89,7 @@ namespace RampSQL.Extensions
                             bind.Set(r[bind.Column]);
 
                         // Activate Reference
-                        if (bind.BindType == BindType.Reference)
+                        if (bind.BindType == BindType.Reference || bind.BindType == BindType.BindAll)
                         {
                             IRampLoadable referenceModel = (IRampLoadable)Activator.CreateInstance(bind.Type);
                             bind.Set(referenceModel);
@@ -294,6 +296,12 @@ namespace RampSQL.Extensions
             foreach (TableLinkEntry tb in Binder.TableLinks) query.Join(tb.LocalColumn, tb.ReferenceColumn, tb.RefJoinType);
             return query;
         }
+
+
+
+
+
+
 
         public void SaveModel()
         {
